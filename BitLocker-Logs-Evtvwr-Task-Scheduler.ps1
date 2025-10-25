@@ -49,7 +49,7 @@ Write-Host "Checking BitLocker status again"
 
 function cmd_encryption {
     Write-Output "Failed to encrypt using PowerShell. Executing from Command Prompt"
-    Start-Process cmd.exe -ArgumentList "/k manage-bde -on $($user_defined_drive): -RecoveryPassword && manage-bde -protectors -get $($user_defined_drive): > $(C:\Windows\CCM\Key.txt)" -Verb runas
+    Start-Process cmd.exe -ArgumentList "/k manage-bde -on $($user_defined_drive): -RecoveryPassword && manage-bde -protectors -get $($user_defined_drive): > $(C:\Windows\CCM\Logs\Key.txt)" -Verb runas
 }
 
 if (((Get-BitLockerVolume | Where-Object { $_.MountPoint -eq "$($user_defined_drive):" }).ProtectionStatus) -eq "Off") {
