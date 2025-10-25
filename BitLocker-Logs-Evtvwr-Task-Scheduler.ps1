@@ -19,13 +19,36 @@ if ($bitlocker_status -eq 'Off') {
     }
     catch {
         Write-Warning "Could not encrypt BitLocker using PowerShell. Trying with CMD commands"
-        manage-bde -status | Out-File -FilePath $logs_path\Status.txt
-        mmanage-bde -on $($user_defined_drive): -RecoveryPassword
-        manage-bde -protectors -get $($user_defined_drive): | Out-File -FilePath $logs_path\BitLockerRecoveryPassword.txt
     }
 }
 
 Start-Sleep -Seconds 1
 
 Write-Output "Collecting the logs from Event Viewer"
-Get-WinEvent -LogName "Microsoft-Windows-BitLocker-API/Management" -MaxEvents 100 | Out-File -FilePath ""
+Get-WinEvent -LogName "Microsoft-Windows-BitLocker-API/Management" -MaxEvents 100 | Out-File -FilePath "$logs_path\BitLocker-API.log"
+if ((Test-Path $logs_path\BitLocker-API.log) -eq $true) {
+    Write-Output "Collected BitLocker-API logs"
+}
+elseif ($false) {
+    Write-Warning "Failed to extract BitLocker API logs"
+}
+
+if ((Test-Path $logs_path\BitlockerManagementHandler.log) -eq $false) {
+    Write-Warning "BitLocker Handler Logs missing"
+}
+elseif ($true) {
+    $true
+}
+
+Start-Sleep -Seconds 1
+
+Write-Host "Checking BitLocker status again"
+
+function cmd_encryption {
+    Write-Output "Failed to encrypt using PowerShell. Executing from Command Prompt"
+    Start-Process cmd.exe -ArgumentList "/k manage-bde -on C: -RecoveryPassword && manage-bde -protectors -get C: > C:\Windows\CCM\Logs.txt" -Verb runas
+}
+
+if (((Get-BitLockerVolume | Where-Object { $_.MountPoint -eq "$($user_defined_drive):" }).ProtectionStatus) -eq "Off") {
+    cmd_encryption
+}
