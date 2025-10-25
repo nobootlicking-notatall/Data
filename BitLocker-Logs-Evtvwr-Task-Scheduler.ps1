@@ -4,15 +4,18 @@ $bitlocker_status
 
 $logs_path = "$Env:windir\CCM\Logs"
 
-if ((Test-Path $logs_path) -eq $true) {
-    New-Item -Path "C:\Windows\CCM\Logs" -ItemType Directory -Force
+if ((Test-Path $logs_path) -eq $false) {
+    New-Item -Path "C:\Windows\CCM\Logs" -ItemType Directory -Force | Out-Null
 }
+elseif ((Test-Path $logs_path) -eq $true) {
+    $true
+} 
 else {
     Write-Warning "Failed to create the Logs folder. Try creating C:\Windows\CCM\Logs manually and re-run the script. Exiting..."
+    return
 }
-return
 
-if ($bitlocker_status -eq 'Off') {
+if ($bitlocker_status -eq "Off") {
     Write-Host "Enabling the BitLocker Protection for $user_defined_drive drive"
     try {
         Enable-BitLocker -MountPoint $user_defined_drive -EncryptionMethod XtsAes256 -RecoveryKeyPath $logs_path
@@ -46,7 +49,7 @@ Write-Host "Checking BitLocker status again"
 
 function cmd_encryption {
     Write-Output "Failed to encrypt using PowerShell. Executing from Command Prompt"
-    Start-Process cmd.exe -ArgumentList "/k manage-bde -on C: -RecoveryPassword && manage-bde -protectors -get C: > C:\Windows\CCM\Logs.txt" -Verb runas
+    Start-Process cmd.exe -ArgumentList "/k manage-bde -on $($user_defined_drive): -RecoveryPassword && manage-bde -protectors -get $($user_defined_drive): > $(C:\Windows\CCM\Key.txt)" -Verb runas
 }
 
 if (((Get-BitLockerVolume | Where-Object { $_.MountPoint -eq "$($user_defined_drive):" }).ProtectionStatus) -eq "Off") {
